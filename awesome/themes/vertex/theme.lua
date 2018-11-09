@@ -18,7 +18,7 @@ theme.default_dir                               = require("awful.util").get_them
 theme.icon_dir                                  = os.getenv("HOME") .. "/.config/awesome/themes/vertex/icons"
 theme.wallpaper                                 = os.getenv("HOME") .. "/.config/awesome/themes/vertex/wall.png"
 theme.font                                      = "Roboto Bold 10"
-theme.taglist_font                              = "FontAwesome 17"
+--theme.taglist_font                              = "FontAwesome 17"
 theme.fg_normal                                 = "#FFFFFF"
 theme.fg_focus                                  = "#6A95EB"
 theme.bg_focus                                  = "#303030"
@@ -80,8 +80,8 @@ theme.layout_cornernw                           = theme.default_dir.."/layouts/c
 theme.layout_cornerne                           = theme.default_dir.."/layouts/cornernew.png"
 theme.layout_cornersw                           = theme.default_dir.."/layouts/cornersww.png"
 theme.layout_cornerse                           = theme.default_dir.."/layouts/cornersew.png"
-theme.tasklist_plain_task_name                  = true
-theme.tasklist_disable_icon                     = true
+theme.tasklist_plain_task_name                  = false
+theme.tasklist_disable_icon                     = false
 theme.useless_gap                               = 10
 theme.titlebar_close_button_normal              = theme.default_dir.."/titlebar/close_normal.png"
 theme.titlebar_close_button_focus               = theme.default_dir.."/titlebar/close_focus.png"
@@ -105,8 +105,6 @@ theme.titlebar_maximized_button_normal_active   = theme.default_dir.."/titlebar/
 theme.titlebar_maximized_button_focus_active    = theme.default_dir.."/titlebar/maximized_focus_active.png"
 
 -- http://fontawesome.io/cheatsheet
-awful.util.tagnames = { "", "", "", "", "", "", "", "" }
-
 local markup = lain.util.markup
 
 -- Clock
@@ -118,7 +116,7 @@ theme.cal = lain.widget.cal({
     notification_preset = {
         fg = "#FFFFFF",
         bg = theme.bg_normal,
-        position = "top_middle",
+        position = "top_right",
         font = "Monospace 10"
     }
 })
@@ -163,25 +161,6 @@ local bat = lain.widget.bat({
     end
 })
 
--- MPD
-theme.mpd = lain.widget.mpd({
-    music_dir = "/mnt/storage/Downloads/Music",
-    settings = function()
-        if mpd_now.state == "play" then
-            title = mpd_now.title
-            artist  = "  " .. mpd_now.artist  .. " "
-        elseif mpd_now.state == "pause" then
-            title = "mpd "
-            artist  = "paused "
-        else
-            title  = ""
-            artist = ""
-        end
-
-        widget:set_markup(markup.font(theme.font, title .. markup(theme.fg_focus, artist)))
-    end
-})
-
 -- ALSA volume
 local volicon = wibox.widget.imagebox()
 theme.volume = lain.widget.alsabar({
@@ -209,7 +188,7 @@ theme.volume = lain.widget.alsabar({
 })
 volicon:buttons(my_table.join (
           awful.button({}, 1, function()
-            awful.spawn(string.format("%s -e pavucontrol", awful.util.terminal))
+            awful.spawn(string.format("pavucontrol"))
           end),
           awful.button({}, 2, function()
             os.execute(string.format("%s set %s 100%%", theme.volume.cmd, theme.volume.channel))
@@ -231,11 +210,12 @@ volicon:buttons(my_table.join (
 
 -- Weather
 theme.weather = lain.widget.weather({
-    city_id = 2643743, -- placeholder (London)
+    city_id = 4930956, -- placeholder (London)
+    units = "imperial",
     notification_preset = { font = "Monospace 10" },
     settings = function()
         units = math.floor(weather_now["main"]["temp"])
-        widget:set_markup(" " .. markup.font(theme.font, units .. "°C") .. " ")
+        widget:set_markup(" " .. markup.font(theme.font, units .. "°F") .. " ")
     end
 })
 
@@ -281,68 +261,6 @@ local dockshape = function(cr, width, height)
     gears.shape.partially_rounded_rect(cr, width, height, false, true, true, false, 6)
 end
 
-function theme.vertical_wibox(s)
-    -- Create the vertical wibox
-    s.dockheight = (35 *  s.workarea.height)/100
-
-    s.myleftwibox = wibox({ screen = s, x=0, y=s.workarea.height/2 - s.dockheight/2, width = 6, height = s.dockheight, fg = theme.fg_normal, bg = barcolor2, ontop = true, visible = true, type = "dock" })
-
-    if s.index > 1 and s.myleftwibox.y == 0 then
-        s.myleftwibox.y = screen[1].myleftwibox.y
-    end
-
-    -- Add widgets to the vertical wibox
-    s.myleftwibox:setup {
-        layout = wibox.layout.align.vertical,
-        {
-            layout = wibox.layout.fixed.vertical,
-            lspace1,
-            s.mytaglist,
-            lspace2,
-            s.layoutb,
-            wibox.container.margin(mylauncher, 5, 8, 13, 0),
-        },
-    }
-
-    -- Add toggling functionalities
-    s.docktimer = gears.timer{ timeout = 2 }
-    s.docktimer:connect_signal("timeout", function()
-        local s = awful.screen.focused()
-        s.myleftwibox.width = 9
-        s.layoutb.visible = false
-        mylauncher.visible = false
-        if s.docktimer.started then
-            s.docktimer:stop()
-        end
-    end)
-    tag.connect_signal("property::selected", function(t)
-        local s = t.screen or awful.screen.focused()
-        s.myleftwibox.width = 38
-        s.layoutb.visible = true
-        mylauncher.visible = true
-        gears.surface.apply_shape_bounding(s.myleftwibox, dockshape)
-        if not s.docktimer.started then
-            s.docktimer:start()
-        end
-    end)
-
-    s.myleftwibox:connect_signal("mouse::leave", function()
-        local s = awful.screen.focused()
-        s.myleftwibox.width = 9
-        s.layoutb.visible = false
-        mylauncher.visible = false
-    end)
-
-    s.myleftwibox:connect_signal("mouse::enter", function()
-        local s = awful.screen.focused()
-        s.myleftwibox.width = 38
-        s.layoutb.visible = true
-        mylauncher.visible = true
-        gears.surface.apply_shape_bounding(s.myleftwibox, dockshape)
-    end)
-end
-
-
 function theme.at_screen_connect(s)
     -- Quake application
     s.quake = lain.util.quake({ app = awful.util.terminal, border = theme.border_width })
@@ -355,7 +273,7 @@ function theme.at_screen_connect(s)
     gears.wallpaper.maximized(wallpaper, s, true)
 
     -- Tags
-    awful.tag(awful.util.tagnames, s, awful.layout.layouts)
+    awful.tag({"1","2","3","4","5","6","7","8","9"}, s, awful.layout.layouts[1])
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -371,40 +289,39 @@ function theme.at_screen_connect(s)
                            awful.button({ }, 5, function () awful.layout.inc(-1) end)))
     s.layoutb = wibox.container.margin(s.mylayoutbox, 8, 11, 3, 3)
 
-    -- Create a taglist widget
-    s.mytaglist = awful.widget.taglist(s, awful.widget.taglist.filter.all, awful.util.taglist_buttons, {
-        font = theme.taglist_font,
-        shape = gears.shape.rectangle,
+    s.mytaglist2 = awful.widget.taglist(s, awful.widget.taglist.filter.all, awful.util.taglist_buttons, {
+        --shape = gears.shape.rectangle,
         spacing = 10,
-        square_unsel = theme.square_unsel,
+        --square_unsel = theme.square_unsel,
         bg_focus = barcolor
-    }, nil, wibox.layout.fixed.vertical())
+    },nil,wibox.layout.fixed.horizontal())
 
     -- Create a tasklist widget
-    s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.focused, awful.util.tasklist_buttons, { bg_focus = "#00000000" })
+    s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, awful.util.tasklist_buttons, { bg_focus = "#00000000" })
 
     -- Create the wibox
     s.mywibox = awful.wibar({ position = "top", screen = s, height = 25, bg = gears.color.create_png_pattern(theme.panelbg) })
 
     local wiboxlayout = wibox.layout.align.horizontal()
-    wiboxlayout.expand = "none"
+    --wiboxlayout.expand = "none"
     -- Add widgets to the wibox
     s.mywibox:setup {
         layout = wiboxlayout,
         { -- Left widgets
             layout = wibox.layout.fixed.horizontal,
+            mylauncher,
             s.mypromptbox,
             tspace1,
+            s.mytaglist2,
             s.mytasklist,
         },
         { -- Middle widgets
             layout = wibox.layout.fixed.horizontal,
-            mytextclock,
         },
         { -- Right widgets
             layout = wibox.layout.fixed.horizontal,
-            wibox.widget { nil, nil, theme.mpd.widget, layout = wibox.layout.align.horizontal },
             rspace0,
+            s.mylayoutbox,
             theme.weather.icon,
             theme.weather.widget,
             rspace1,
@@ -415,10 +332,9 @@ function theme.at_screen_connect(s)
             baticon,
             rspace3,
             wibox.widget.systray(),
+            mytextclock,
         },
     }
-
-    gears.timer.delayed_call(theme.vertical_wibox, s)
 end
 
 return theme
