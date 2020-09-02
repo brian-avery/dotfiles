@@ -1,0 +1,53 @@
+# Set up the prompt
+fpath+=$HOME/.zsh/pure
+autoload -U promptinit; promptinit
+prompt pure
+
+setopt histignorealldups sharehistory
+
+# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=1000
+SAVEHIST=1000
+HISTFILE=~/.zsh_history
+
+# Use modern completion system
+autoload -Uz compinit
+compinit
+ll='ls -lh'
+zstyle ':completion:*' auto-description 'specify: %d'
+zstyle ':completion:*' completer _expand _complete _correct _approximate
+zstyle ':completion:*' format 'Completing %d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' menu select=2
+eval "$(dircolors -b)"
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+zstyle ':completion:*' menu select=long
+zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
+zstyle ':completion:*' use-compctl false
+zstyle ':completion:*' verbose true
+
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
+
+export GOPATH=$HOME/go
+export PATH=$PATH:/snap/bin:$HOME/go/bin
+eval "$(direnv hook zsh)"
+
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+source ~/code/tools/forgit/forgit.plugin.zsh
+#utilities
+echo "Don't forget that you installed forgit(glo, ga, gi, gd, grh, gcf, gss, gclean), batcat (cat replacement), fd (find files quickly), pastebinit and fzmarks"
+
+#needed to make Tilix work properly. See: https://github.com/gnunn1/tilix/wiki/VTE-Configuration-Issue
+if [[ $TILIX_ID ]]; then
+        source /etc/profile.d/vte.sh
+fi
+
+if [ -z "$TMUX" ]]; then
+    tmux attach -t default || tmux new -s default
+fi
