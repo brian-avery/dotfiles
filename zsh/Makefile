@@ -1,4 +1,4 @@
 .PHONY: install
 install:
-	npm install --global pure-prompt
+	sudo npm install --global pure-prompt
 	cp zshrc $(HOME)/.zshrc
